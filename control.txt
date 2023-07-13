@@ -1,0 +1,40 @@
+# control.txt
+# Parameter file for the wrf-run script
+#  Information:
+#   Lines that begin with a '#' are comment lines and are ignored
+#   All other lines will store a variable under the name of the first word, with the value of the second
+#    EX: myVariable 12
+#    Would store the parameter myVariable as 12
+#   All remaining information following the second block is ignored, allowing for comments to be used
+#    EX: myVariable 12 This is a sample variable
+#    This is also an acceptable format for this file
+#
+#   You can also define some parameters as a "list" of variables, to do so:
+#    myVariable {1,2,3,4,5}
+#   You can force an integer or float transformation on it by prepending a statement:
+#    myVariable (int){1,2,3,4,5}
+#
+# Application Parameters
+request_proj climlab
+# Data knobs
+geo_seperate 1
+geo_file geo_em.[domain].nc
+domains {d01}
+# GridRAD knobs
+gridrad_cores 4
+gridrad_procs 8
+gridrad_walltime 02:00:00
+# Calculation knobs
+calculation_cores 4
+calculation_procs 8
+calculation_walltime 02:00:00
+# Verification knobs
+verification_cores 4
+verification_procs 8
+verification_walltime 02:00:00
+# Plotting knobs
+plotting_cores 4
+plotting_procs 8
+plotting_walltime 02:00:00
+make_gifs 1
+gif_fps 20
