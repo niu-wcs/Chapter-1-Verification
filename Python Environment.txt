@@ -1,0 +1,44 @@
+Anaconda Python Environment
+
+Instructions to create should the need to re-install happen
+
+The order here is VERY IMPORTANT to prevent dependency issues
+
+conda create -n wrf-work
+conda activate wrf-work
+conda install -c conda-forge xesmf esmf=8.3.1
+conda install -c conda-forge wrf-python metpy
+conda install -c conda-forge netCDF4
+conda install -c conda-forge geopandas esmf=8.3.1
+conda install matplotlib cartopy
+pip install cdsapi
+pip install geojsoncontour
+
+The mpi4py module installed by xesmf will likely NOT work on HPC machines with modules as you need to point
+to the instance of MPI that is being used in the job-scheduler (IE: PBS, COBALT, etc.). Therefore, we need
+to remove mpi4py and mpich from the environment.
+
+NOTE: This will try to force the esmf update on you which currently is bugged w/ MPI scripts due to a change
+in the esmf.mkfile, so make sure to use the --force parameter when removing: 
+
+conda remove --force mpi4py mpich
+
+Finally, install mpi4py through pip to link it to your MPI headers on your HPC machine. It is EXTREMELY IMPORTANT
+to make sure that any .bashrc scripts you have are correctly set up to the point that your mpicc executable path
+WILL NOT CHANGE, otherwise the mpi4py library may incorrectly install (IE: pip will say it succeeded, but when you
+try to use mpi4py, it will not load)
+
+MPICC="mpicc -shared" pip install --no-cache-dir --no-binary=mpi4py mpi4py
+
+I highly recommend to fully test all packages in a standard python call once done:
+
+python 
+>>>
+
+import geopandas as gpd
+import xesmf as xe
+import geojsoncontour
+
+from mpi4py import MPI as _MPI 
+(NOTE: This import may fail, but if it does so in a manner that looks like a "job completed" log file being printed
+ to your terminal, then this actually means it worked!)
