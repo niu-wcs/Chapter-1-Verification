@@ -35,13 +35,6 @@ import mpipool
 
 """
 CONSTANTS
-
-BIG IMPORTANT NOTE CHAPTER TWO
-MAKE SURE TO UPDATE THESE BEFORE RUNNING VERIFICATION JOB!!!
-
-# inch to mm: 1 in = 25.4 mm
-
-
 NOTE: I have updated the script to now automatically compute FSS thresholds for precipitation based on percentiles of verification data, just make sure to adjust the START/END times
 """
 FILE_VERSION = 2.1
@@ -49,7 +42,7 @@ FILE_VERSION = 2.1
 # These three should be ok to be left constant, but are offered here for quick tuning.
 FSS_THRESH_SIMREF = 40 # 40 dBZ
 FSS_THRESH_HAILSIZE = 25 # 25mm ~ 1 in
-FSS_THRESHS_THETAE = [250, 260, 270, 280, 290, 300, 310, 320, 330, 340, 350]
+FSS_THRESHS_THETAE = [250, 260, 270, 280, 290, 300, 310, 320, 330, 340, 350] # Not used, retained for other projects
 FSS_THRESHS_PRECIP_PERCENTILES = [1, 5, 10, 25, 50, 75, 80, 90, 95, 99, 99.9, 99.99] # Adjust these values to control how many FSS thresholds are computed for precipitation
 
 FSS_Scales = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 
@@ -753,7 +746,7 @@ def handle_gridrad(VERIF_O, V_GRIDRAD, gridrad_regridder, TIMESTR, domain, SUBHR
             VERIF_O["V_Ref0_RMSE_" + test + "_EnsMean"] = (['TimeFile'], [V_Ref0_RMSE.data])
             VERIF_O["V_Ref0_FSS_" + test + "_EnsMean"] = (['FSS_Scales'], fss)  
 
-            if MEAN_REF_R is not None:
+            if array_refr is not None:
                 MEAN_REF_R = np.array(array_refr).mean(axis = 0)   
                 fss = []
                 for f in FSS_Scales:
@@ -2158,7 +2151,7 @@ def verify_watch_polygons(command_tuple):
             gpd_json['UHLevel'] = "2_5"
             gpd_json['threshold'] = 75       
             gpd_json.crs = "epsg:4326"
-            uh_gdf = uh_gdf.append(gpd_json, ignore_index=True)
+            uh_gdf = gpd.GeoDataFrame(pd.concat([uh_gdf, gpd_json], ignore_index=True), crs=uh_gdf.crs)
         except ValueError:
             pass
         
@@ -2178,7 +2171,7 @@ def verify_watch_polygons(command_tuple):
             gpd_json['UHLevel'] = "0_3"
             gpd_json['threshold'] = 100        
             gpd_json.crs = "epsg:4326"
-            uh_gdf = uh_gdf.append(gpd_json, ignore_index=True)
+            uh_gdf = gpd.GeoDataFrame(pd.concat([uh_gdf, gpd_json], ignore_index=True), crs=uh_gdf.crs)
         except ValueError:
             pass            
        
@@ -2197,7 +2190,7 @@ def verify_watch_polygons(command_tuple):
             gpd_json['geometry'] = [Polygon(mapping(x)['coordinates']) for x in gpd_json.geometry]    
             gpd_json['threshold'] = 29   
             gpd_json.crs = "epsg:4326"
-            afwa_tor_gdf = afwa_tor_gdf.append(gpd_json, ignore_index=True)    
+            afwa_tor_gdf = gpd.GeoDataFrame(pd.concat([afwa_tor_gdf, gpd_json], ignore_index=True), crs=afwa_tor_gdf.crs)  
         except ValueError:
             pass            
     
@@ -2322,7 +2315,7 @@ def verify_watch_polygons_ensemble(command_tuple):
                 xr_i = xr.open_dataset(subhr_files[i])                
                 #tools.loggedPrint.instance().write("verify_watch_polygons_ensemble: " + str(index) + ": DEBUG [" + test + " => " + iTest + "]: MAX (2-5): " + str(np.nanmax(xr_i["UH"][0].data)) + ", (0-3): " + str(np.nanmax(xr_i["UH03"][0].data)))
                 array_UH25.append(xr_i["UH"][0])
-                NP_UH03.append(xr_i["UH03"][0])
+                array_UH03.append(xr_i["UH03"][0])
 
                 xr_i.close()
         eMeanUH25 = np.array(array_UH25).mean(axis=0)
@@ -2367,7 +2360,8 @@ def verify_watch_polygons_ensemble(command_tuple):
             gpd_json['UHLevel'] = "2_5"
             gpd_json['threshold'] = 75       
             gpd_json.crs = "epsg:4326"
-            uh_gdf = uh_gdf.append(gpd_json, ignore_index=True)
+            #uh_gdf = uh_gdf.append(gpd_json, ignore_index=True) #RF: append removed in geopandas 2.0
+            uh_gdf = gpd.GeoDataFrame(pd.concat([uh_gdf, gpd_json], ignore_index=True), crs=uh_gdf.crs)
         except ValueError:
             pass
         
@@ -2387,7 +2381,7 @@ def verify_watch_polygons_ensemble(command_tuple):
             gpd_json['UHLevel'] = "0_3"
             gpd_json['threshold'] = 100        
             gpd_json.crs = "epsg:4326"
-            uh_gdf = uh_gdf.append(gpd_json, ignore_index=True)
+            uh_gdf = gpd.GeoDataFrame(pd.concat([uh_gdf, gpd_json], ignore_index=True), crs=uh_gdf.crs)
         except ValueError:
             pass            
        
@@ -2405,8 +2399,8 @@ def verify_watch_polygons_ensemble(command_tuple):
             gpd_json = gpd.GeoDataFrame.from_features(pd_json["features"])
             gpd_json['geometry'] = [Polygon(mapping(x)['coordinates']) for x in gpd_json.geometry]    
             gpd_json['threshold'] = 29   
-            gpd_json.crs = "epsg:4326"
-            afwa_tor_gdf = afwa_tor_gdf.append(gpd_json, ignore_index=True)    
+            gpd_json.crs = "epsg:4326"  
+            afwa_tor_gdf = gpd.GeoDataFrame(pd.concat([afwa_tor_gdf, gpd_json], ignore_index=True), crs=afwa_tor_gdf.crs)           
         except ValueError:
             pass            
     
@@ -2765,7 +2759,6 @@ def run_script(ensembleMode, tDir, vHeadDir, inGeoEM = ''):
                 results_dict[test][r] = {}
         
         for r in resultList:
-            tools.loggedPrint.instance().write("DEBUG: results: [" + str(r) + "]\n")
         
             index = r[0]
             test = r[1]
@@ -3055,13 +3048,6 @@ def run_script(ensembleMode, tDir, vHeadDir, inGeoEM = ''):
         # Save a copy of the polygon indices, we use this in our overlap operations.
         gdf_explode.reset_index(inplace = True)
         gdf_explode["POLY_INDEX"] = gdf_explode.index
-        # Create zeros for what is being saved out from the MPI processing.
-        gdf_explode["UHInside"] = 0
-        gdf_explode["UHOtherPoly"] = 0
-        gdf_explode["UHOutside"] = 0
-        gdf_explode["TORInside"] = 0
-        gdf_explode["TOROtherPoly"] = 0
-        gdf_explode["TOROutside"] = 0
         # Iterate over the polygons.
         commands = []
         rng = gdf_explode.index.unique()
@@ -3071,6 +3057,7 @@ def run_script(ensembleMode, tDir, vHeadDir, inGeoEM = ''):
         resultList = pool.map(verify_watch_polygons, commands)
         tools.loggedPrint.instance().write("Saving Output.")
         # Loop into the MPI results, each worker will return a tuple containing the GDF index and the resulting values
+        """
         for r in resultList:
             index = r[0]
             gdf_explode.at[gdf_explode["POLY_INDEX"] == index, "UHInside"] = r[1]
@@ -3081,6 +3068,27 @@ def run_script(ensembleMode, tDir, vHeadDir, inGeoEM = ''):
             gdf_explode.at[gdf_explode["POLY_INDEX"] == index, "TOROutside"] = r[6]        
         # Save the output dataframe to our verification directory.
         gdf_explode.to_file(vFileDir + "verification_NWS_polygons.shp")
+        """
+        results_dict = {}
+        for r in rng:
+            results_dict[r] = {}
+        
+        for r in resultList:       
+            index = r[0]
+            
+            results_dict[index] = {
+                "UHInside": r[1],
+                "UHOtherPoly": r[2],
+                "UHOutside": r[3],
+                "TORInside": r[4],
+                "TOROtherPoly": r[5],
+                "TOROutside": r[6],
+            }     
+        # Save the output dataframe to our verification directory.
+        with open(vFileDir + "/verification_NWS_polygons.json", "w") as fileObj:
+            json.dump(results_dict, fileObj)        
+        
+        
     # Clean up.
     pool.close()
     tools.loggedPrint.instance().write("Program complete.")   
@@ -3098,7 +3106,7 @@ def main(argv):
     for opt, arg in opts:
         if opt == '-h':
             print("Usage: process_verification.py: Pass the following arguments; (R) indicates required")
-            print(" -e: Activates ensemble verification mode, this disables the other parameters being required")
+            print(" -e: Activates ensemble verification mode, this disables the input directory parameter being required (-v is still required)")
             print(" -i <inputdirectory> (R): The path to the output files (wrfout*, subhr*, AFWA*, etc)")
             print(" -v <headVerificationDir> (R): The path to verification files created through post_processing.py")
             print(" -g <geo_em>: If the geography information (geo_em.d01.nc, etc) is not in the /output/ folder, or is in a shared location, pass that directory to this argument")
